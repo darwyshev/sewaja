@@ -21,7 +21,8 @@ class IntroController extends GetxController {
     IntroData(
       image: 'assets/intro-3.png',
       title: 'Mulai sekarang juga',
-      description: 'Cari barang yang kamu butuhkan atau booking untuk hari lain!',
+      description:
+          'Cari barang yang kamu butuhkan atau booking untuk hari lain!',
     ),
   ];
 
@@ -44,13 +45,13 @@ class IntroController extends GetxController {
         curve: Curves.easeInOut,
       );
     } else {
-      // Navigate to home
-      Get.offAllNamed(Routes.HOME);
+      // Navigate to welcome
+      Get.offAllNamed(Routes.WELCOME);
     }
   }
 
   void skipIntro() {
-    Get.offAllNamed(Routes.HOME);
+    Get.offAllNamed(Routes.WELCOME);
   }
 
   @override

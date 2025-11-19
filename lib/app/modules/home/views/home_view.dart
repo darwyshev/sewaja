@@ -13,169 +13,173 @@ class HomeView extends GetView<HomeController> {
       backgroundColor: Colors.white,
       body: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildSearchBar(),
-            _buildCategories(),
-            _buildRecommendationSection(),
+        child: CustomScrollView(
+          slivers: [
+            // Collapsible Header
+            SliverAppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              pinned: false,
+              floating: true,
+              expandedHeight: 240.0,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.parallax,
+                background: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Selamat datang',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Ubuntu',
+                            ),
+                          ),
+                          Stack(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.notifications, size: 28),
+                                onPressed: () {},
+                              ),
+                              Positioned(
+                                right: 8,
+                                top: 8,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F5F5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Cari sesuatu',
+                            hintStyle: TextStyle(
+                              color: Colors.black.withOpacity(0.4),
+                              fontFamily: 'Ubuntu',
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: Colors.black.withOpacity(0.4),
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 40,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.zero,
+                          itemCount: controller.categories.length,
+                          itemBuilder: (context, index) {
+                            final category = controller.categories[index];
+                            return Obx(() {
+                              final isSelected =
+                                  controller.selectedCategory.value == category;
+                              return GestureDetector(
+                                onTap: () =>
+                                    controller.changeCategory(category),
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF000000)
+                                        : const Color(0xFFF5F5F5),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      category,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.black,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w500
+                                            : FontWeight.normal,
+                                        fontFamily: 'Ubuntu',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Rekomendasi Section
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Rekomendasi',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Ubuntu',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            ),
+            // Products Grid
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ).copyWith(bottom: 80),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.68,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return _buildProductCard(controller.products[index]);
+                }, childCount: controller.products.length),
+              ),
+            ),
           ],
         ),
       ),
       bottomNavigationBar: SafeArea(top: false, child: _buildBottomNav()),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Selamat datang',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Ubuntu',
-            ),
-          ),
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications, size: 28), // Filled icon
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Cari sesuatu',
-            hintStyle: TextStyle(
-              color: Colors.black.withOpacity(0.4),
-              fontFamily: 'Ubuntu',
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: Colors.black.withOpacity(0.4),
-            ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategories() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: SizedBox(
-        height: 40,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: controller.categories.length,
-          itemBuilder: (context, index) {
-            final category = controller.categories[index];
-            return Obx(() {
-              final isSelected = controller.selectedCategory.value == category;
-              return GestureDetector(
-                onTap: () => controller.changeCategory(category),
-                child: Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFF000000)
-                        : const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Center(
-                    child: Text(
-                      category,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
-                        fontWeight: isSelected
-                            ? FontWeight.w500
-                            : FontWeight.normal,
-                        fontFamily: 'Ubuntu',
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecommendationSection() {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Rekomendasi',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Ubuntu',
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-              ).copyWith(bottom: 80),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.68,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: controller.products.length,
-              itemBuilder: (context, index) {
-                return _buildProductCard(controller.products[index]);
-              },
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -282,7 +286,11 @@ class HomeView extends GetView<HomeController> {
   Widget _buildNavItem(IconData icon, int index) {
     final isSelected = controller.currentIndex.value == index;
     return GestureDetector(
-      onTap: () => controller.changeBottomNav(index),
+      onTap: () {
+        controller.changeBottomNav(index);
+        if (index == 0) Get.offNamed('/home');
+        if (index == 3) Get.offNamed('/profile');
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
