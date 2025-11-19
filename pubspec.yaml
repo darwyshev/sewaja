@@ -1,4 +1,4 @@
-name: sewaja
+name: Sewaja
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   get: ^4.7.2
+  flutter_native_splash: ^2.4.0
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +47,21 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+
+flutter_native_splash:
+  color: "#1F2334"        # background warna gelap atau apapun
+  image: assets/icon/app_icon.png  # gambar splash kamu
+  android: true
+  ios: true
+
+  android_gravity: center
+  ios_content_mode: center
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -57,6 +73,14 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/intro-1.png
+    - assets/intro-2.png
+    - assets/intro-3.png
+    - assets/products/tenda.jpg
+    - assets/products/sepeda.jpg
+    - assets/products/kamera.jpg
+    - assets/products/sepatu.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -86,5 +110,15 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
+
+  fonts:
+    - family: Ubuntu
+      fonts:
+        - asset: fonts/Ubuntu-Regular.ttf
+        - asset: fonts/Ubuntu-Bold.ttf
+          weight: 700
+        - asset: fonts/Ubuntu-Medium.ttf
+          weight: 500
+          
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
