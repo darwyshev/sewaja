@@ -2,21 +2,24 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sewaja/services/auth_service.dart';
 
 class LoginController extends GetxController {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  
+
   final isPasswordVisible = false.obs;
   final rememberMe = false.obs;
   final isLoading = false.obs;
+
+  final authService = AuthService();
 
   @override
   void onInit() {
     super.onInit();
     // Pre-fill untuk testing (bisa dihapus)
-    emailController.text = 'prayogawiryawan@gmail.com';
-    passwordController.text = '**********';
+    emailController.text = 'aku@mail.com';
+    passwordController.text = '12345678';
   }
 
   void togglePasswordVisibility() {
@@ -51,23 +54,25 @@ class LoginController extends GetxController {
       return;
     }
 
-    // Proses login (kirim ke API)
+    // Proses login ke Supabase
     isLoading.value = true;
-    
-    // Simulasi API call
-    Future.delayed(const Duration(seconds: 2), () {
-      isLoading.value = false;
-      Get.snackbar(
-        'Berhasil',
-        'Login berhasil',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFC0E862),
-        colorText: Colors.black,
-      );
-      
-      // Navigate to home
-      Get.offAllNamed('/home');
-    });
+
+    // Panggil auth service untuk login
+    authService
+        .login(emailController.text, passwordController.text, Get.context!)
+        .then((_) {
+          isLoading.value = false;
+        })
+        .catchError((e) {
+          isLoading.value = false;
+          Get.snackbar(
+            'Error',
+            'Login gagal: $e',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        });
   }
 
   void loginWithGoogle() {

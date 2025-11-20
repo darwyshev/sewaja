@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sewaja/services/auth_service.dart';
 import '../controllers/login_controller.dart';
 
 class LoginView extends GetView<LoginController> {
@@ -73,10 +74,7 @@ class LoginView extends GetView<LoginController> {
           child: TextField(
             controller: controller.emailController,
             keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(
-              fontSize: 16,
-              fontFamily: 'Ubuntu',
-            ),
+            style: const TextStyle(fontSize: 16, fontFamily: 'Ubuntu'),
             decoration: const InputDecoration(
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 20,
@@ -84,10 +82,7 @@ class LoginView extends GetView<LoginController> {
               ),
               border: InputBorder.none,
               hintText: 'prayogawiryawan@gmail.com',
-              hintStyle: TextStyle(
-                color: Colors.black,
-                fontFamily: 'Ubuntu',
-              ),
+              hintStyle: TextStyle(color: Colors.black, fontFamily: 'Ubuntu'),
             ),
           ),
         ),
@@ -117,10 +112,7 @@ class LoginView extends GetView<LoginController> {
             () => TextField(
               controller: controller.passwordController,
               obscureText: !controller.isPasswordVisible.value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontFamily: 'Ubuntu',
-              ),
+              style: const TextStyle(fontSize: 16, fontFamily: 'Ubuntu'),
               decoration: InputDecoration(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -197,7 +189,13 @@ class LoginView extends GetView<LoginController> {
       width: double.infinity,
       child: Obx(
         () => ElevatedButton(
-          onPressed: controller.isLoading.value ? null : controller.login,
+          onPressed: () async {
+            await AuthService().login(
+              controller.emailController.text.trim(), 
+              controller.passwordController.text.trim(),
+              Get.context!
+            );
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFC0E862),
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -234,10 +232,7 @@ class LoginView extends GetView<LoginController> {
     return Row(
       children: [
         Expanded(
-          child: Container(
-            height: 1,
-            color: Colors.black.withOpacity(0.2),
-          ),
+          child: Container(height: 1, color: Colors.black.withOpacity(0.2)),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -251,10 +246,7 @@ class LoginView extends GetView<LoginController> {
           ),
         ),
         Expanded(
-          child: Container(
-            height: 1,
-            color: Colors.black.withOpacity(0.2),
-          ),
+          child: Container(height: 1, color: Colors.black.withOpacity(0.2)),
         ),
       ],
     );
@@ -276,11 +268,7 @@ class LoginView extends GetView<LoginController> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/icon/google_logo.png',
-              height: 24,
-              width: 24,
-            ),
+            Image.asset('assets/icon/google_logo.png', height: 24, width: 24),
             const SizedBox(width: 12),
             const Text(
               'Log in dengan Google',

@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'app/routes/app_pages.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]).then((_) {
-    runApp(const MyApp());
-  });
+  await Supabase.initialize(
+    url: 'https://aaaiczsguvewfsrugvhl.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhYWljenNndXZld2ZzcnVndmhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NDM3OTUsImV4cCI6MjA3OTIxOTc5NX0.HQIAhDO1KTnRXWb_eYSeqBs2727pBwcB88ZYNOnjRaw',
+  );
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
