@@ -185,48 +185,43 @@ class LoginView extends GetView<LoginController> {
   }
 
   Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: Obx(
-        () => ElevatedButton(
-          onPressed: () async {
-            await AuthService().login(
-              controller.emailController.text.trim(), 
-              controller.passwordController.text.trim(),
-              Get.context!
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFC0E862),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            elevation: 0,
-            disabledBackgroundColor: const Color(0xFFC0E862).withOpacity(0.5),
+  return SizedBox(
+    width: double.infinity,
+    child: Obx(
+      () => ElevatedButton(
+        onPressed: controller.isLoading.value
+            ? null
+            : controller.login,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFC0E862),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
           ),
-          child: controller.isLoading.value
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                  ),
-                )
-              : const Text(
-                  'Log in',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                    fontFamily: 'Ubuntu',
-                  ),
-                ),
+          elevation: 0,
         ),
+        child: controller.isLoading.value
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                ),
+              )
+            : const Text(
+                'Log in',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                  fontFamily: 'Ubuntu',
+                ),
+              ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDivider() {
     return Row(
@@ -256,7 +251,7 @@ class LoginView extends GetView<LoginController> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: controller.loginWithGoogle,
+        onPressed: controller.loginGoogle,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0E1111),
           padding: const EdgeInsets.symmetric(vertical: 16),

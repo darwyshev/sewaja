@@ -1,5 +1,6 @@
 // File: lib/app/modules/edit_profile/views/edit_profile_view.dart
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/edit_profile_controller.dart';
@@ -24,23 +25,22 @@ class EditProfileView extends GetView<EditProfileController> {
                     const SizedBox(height: 20),
                     _buildAvatarSection(),
                     const SizedBox(height: 40),
+
+                    // NAMA LENGKAP
                     _buildTextField(
                       label: 'Nama Lengkap',
-                      controller: controller.nameController,
+                      controller: controller.nameC,
                     ),
                     const SizedBox(height: 24),
+
+                    // KOTA
                     _buildTextField(
-                      label: 'Alamat Email/No. HP',
-                      controller: controller.emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      label: 'Kota',
+                      controller: controller.cityC,
                     ),
+
                     const SizedBox(height: 24),
-                    _buildPasswordField(),
-                    const SizedBox(height: 24),
-                    _buildTextField(
-                      label: 'Kota, Provinsi',
-                      controller: controller.cityController,
-                    ),
+
                     const SizedBox(height: 40),
                     _buildConfirmButton(),
                   ],
@@ -84,12 +84,24 @@ class EditProfileView extends GetView<EditProfileController> {
     return Center(
       child: Stack(
         children: [
-          Obx(
-            () => CircleAvatar(
+          Obx(() {
+            final path = controller.userPhoto.value;
+
+            ImageProvider img;
+
+            if (path.startsWith('http')) {
+              img = NetworkImage(path);
+            } else if (File(path).existsSync()) {
+              img = FileImage(File(path));
+            } else {
+              img = const AssetImage('assets/profile/avatar.jpg');
+            }
+
+            return CircleAvatar(
               radius: 60,
-              backgroundImage: AssetImage(controller.userPhoto.value),
-            ),
-          ),
+              backgroundImage: img,
+            );
+          }),
           Positioned(
             bottom: 0,
             right: 0,
@@ -152,55 +164,6 @@ class EditProfileView extends GetView<EditProfileController> {
               hintStyle: TextStyle(
                 color: Colors.black.withOpacity(0.3),
                 fontFamily: 'Ubuntu',
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPasswordField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Password',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.black.withOpacity(0.6),
-            fontFamily: 'Ubuntu',
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Obx(
-            () => TextField(
-              controller: controller.passwordController,
-              obscureText: !controller.isPasswordVisible.value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontFamily: 'Ubuntu',
-              ),
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                border: InputBorder.none,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    controller.isPasswordVisible.value
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                    color: Colors.black.withOpacity(0.4),
-                  ),
-                  onPressed: controller.togglePasswordVisibility,
-                ),
               ),
             ),
           ),

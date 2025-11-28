@@ -1,12 +1,17 @@
 // File: lib/app/modules/profile/controllers/profile_controller.dart
 
 import 'package:get/get.dart';
+import 'package:sewaja/services/profile_service.dart';
 
 class ProfileController extends GetxController {
-  // User data (bisa diganti dengan data dari API)
-  final userName = 'Prayoga Darius'.obs;
-  final userEmail = 'prayogawiryawan@gmail.com'.obs;
-  final userPhoto = 'assets/profile/avatar.jpg'.obs;
+  final ProfileService profileService = ProfileService();
+
+  // Observable data
+  var userName = ''.obs;
+  var userEmail = ''.obs;
+  var userPhoto = ''.obs;
+
+  var userKota = ''.obs;
 
   // Menu items dengan icons
   final List<ProfileMenuItem> topMenuItems = [
@@ -54,19 +59,29 @@ class ProfileController extends GetxController {
       onTap: () => Get.toNamed('/transaction-history'),
     ),
   ];
-
-  void editProfile() {
-    Get.toNamed('/edit-profile');
-  }
-
+  
   @override
   void onInit() {
     super.onInit();
+    loadProfile();
   }
 
-  @override
-  void onClose() {
-    super.onClose();
+  Future<void> loadProfile() async {
+    final data = await profileService.getProfile();
+    if (data != null) {
+      userName.value = data['full_name'] ?? '-';
+      userEmail.value = data['email'] ?? '-';
+      userPhoto.value = data['avatar_url'] ?? 'assets/profile/avatar.jpg';
+
+      userKota.value = data['city'] ?? '-';
+    }
+  }
+
+  void editProfile() {
+    Get.toNamed('/edit-profile')!.then((_) {
+      // Refresh data setelah edit
+      loadProfile();
+    });
   }
 }
 

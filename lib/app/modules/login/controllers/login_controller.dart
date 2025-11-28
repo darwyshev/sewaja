@@ -30,50 +30,44 @@ class LoginController extends GetxController {
     rememberMe.value = value ?? false;
   }
 
-  void login() {
-    // Validasi
-    if (emailController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Email tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    if (passwordController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Password tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    // Proses login ke Supabase
-    isLoading.value = true;
-
-    // Panggil auth service untuk login
-    authService
-        .login(emailController.text, passwordController.text, Get.context!)
-        .then((_) {
-          isLoading.value = false;
-        })
-        .catchError((e) {
-          isLoading.value = false;
-          Get.snackbar(
-            'Error',
-            'Login gagal: $e',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-          );
-        });
+  void login() async {
+  if (emailController.text.isEmpty) {
+    Get.snackbar(
+      'Error',
+      'Email tidak boleh kosong',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+    return;
   }
+
+  if (passwordController.text.isEmpty) {
+    Get.snackbar(
+      'Error',
+      'Password tidak boleh kosong',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+    return;
+  }
+
+  isLoading.value = true;
+
+  final success = await authService.login(
+    emailController.text,
+    passwordController.text,
+    Get.context!,
+  );
+
+  isLoading.value = false;
+
+  if (success) {
+    // 🔥 INI YANG TIDAK KAMU PUNYA
+    Get.offAllNamed('/home');
+  }
+}
 
   void loginWithGoogle() {
     Get.snackbar(
@@ -107,4 +101,8 @@ class LoginController extends GetxController {
     passwordController.dispose();
     super.onClose();
   }
+
+  void loginGoogle() {
+  authService.loginWithGoogle();
+}
 }

@@ -1,107 +1,78 @@
-// File: lib/app/modules/edit_profile/controllers/edit_profile_controller.dart
-
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sewaja/services/profile_service.dart';
 
 class EditProfileController extends GetxController {
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final cityController = TextEditingController();
+  final ProfileService profileService = ProfileService();
 
-  final userPhoto = 'assets/profile/avatar.jpg'.obs;
-  final isPasswordVisible = false.obs;
+  final nameC = TextEditingController();
+  final cityC = TextEditingController();
 
-  final ImagePicker _picker = ImagePicker();
+  final userPhoto = ''.obs;
+  File? photoFile;
+
+  final ImagePicker picker = ImagePicker();
 
   @override
   void onInit() {
     super.onInit();
-    // Load user data (bisa dari API atau local storage)
-    nameController.text = 'Prayoga Darius';
-    emailController.text = 'prayogawiryawan@gmail.com';
-    passwordController.text = '**********';
-    cityController.text = 'Malang, Jawa Timur';
+    loadProfile();
   }
 
-  void togglePasswordVisibility() {
-    isPasswordVisible.value = !isPasswordVisible.value;
+  Future<void> loadProfile() async {
+    final data = await profileService.getProfile();
+    if (data != null) {
+      nameC.text = data['full_name'] ?? '';
+      cityC.text = data['city'] ?? '';
+      userPhoto.value = 
+        (data['avatar_url'] != null && data['avatar_url'].toString().isNotEmpty)
+            ? data['avatar_url']
+            : 'assets/profile/avatar.jpg';
+
+    }
   }
 
   Future<void> pickImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 75,
-      );
-      
-      if (image != null) {
-        userPhoto.value = image.path;
-        Get.snackbar(
-          'Berhasil',
-          'Foto profil berhasil diubah',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFC0E862),
-          colorText: Colors.black,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Gagal memilih foto',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+    final XFile? img =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+
+    if (img != null) {
+      photoFile = File(img.path);
+      userPhoto.value = img.path; // preview lokal
     }
   }
 
-  void saveProfile() {
-    // Validasi
-    if (nameController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Nama tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
+  Future<void> saveProfile() async {
+    String? uploadedUrl;
+
+    if (photoFile != null) {
+      uploadedUrl = await profileService.uploadProfilePhoto(photoFile!);
     }
 
-    if (emailController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Email tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    // Simpan data (kirim ke API atau local storage)
-    Get.snackbar(
-      'Berhasil',
-      'Profil berhasil diperbarui',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFC0E862),
-      colorText: Colors.black,
+    await profileService.updateProfile(
+      fullName: nameC.text,
+      city: cityC.text,
+      avatarUrl: uploadedUrl ??
+      (userPhoto.value.startsWith('http') ? userPhoto.value : null),
     );
 
-    // Kembali ke halaman profil
+    Get.snackbar(
+      "Berhasil",
+      "Profil berhasil diperbarui",
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+
     Get.back();
   }
 
   @override
   void onClose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    cityController.dispose();
+    nameC.dispose();
+    cityC.dispose();
     super.onClose();
   }
 }

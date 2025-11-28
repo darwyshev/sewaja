@@ -1,7 +1,6 @@
-// File: lib/app/modules/signup/controllers/signup_controller.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sewaja/services/auth_service.dart';
 
 class SignupController extends GetxController {
   final emailController = TextEditingController();
@@ -25,80 +24,58 @@ class SignupController extends GetxController {
     rememberMe.value = value ?? false;
   }
 
-  void signUp() {
-    // Validasi
-    if (emailController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Email tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+  void signUp() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    // validasi singkat — gunakan return untuk stop eksekusi
+    if (email.isEmpty) {
+      Get.snackbar('Error', 'Email tidak boleh kosong',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (password.isEmpty) {
+      Get.snackbar('Error', 'Password tidak boleh kosong',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (password != confirmPasswordController.text.trim()) {
+      Get.snackbar('Error', 'Password tidak sama',
+          backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
 
-    if (passwordController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Password tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    if (passwordController.text != confirmPasswordController.text) {
-      Get.snackbar(
-        'Error',
-        'Password tidak sama',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    if (passwordController.text.length < 6) {
-      Get.snackbar(
-        'Error',
-        'Password minimal 6 karakter',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    // Proses sign up (kirim ke API)
     isLoading.value = true;
-    
-    // Simulasi API call
-    Future.delayed(const Duration(seconds: 2), () {
+
+    try {
+      final ok = await AuthService().register(email, password, Get.context!);
+      if (ok) {
+        // sukses -> arahkan ke login
+      } else {
+        // sudah ditampilkan di service, tapi kalau perlu tampilkan tambahan:
+        Get.snackbar('Error', 'Gagal membuat akun', backgroundColor: Colors.red, colorText: Colors.white);
+      }
+    } catch (e) {
+      Get.snackbar('Error', e.toString(), backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
       isLoading.value = false;
-      Get.snackbar(
-        'Berhasil',
-        'Akun berhasil dibuat',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFC0E862),
-        colorText: Colors.black,
-      );
-      
-      // Navigate to home
-      Get.offAllNamed('/home');
-    });
+    }
   }
 
-  void signUpWithGoogle() {
-    Get.snackbar(
-      'Info',
-      'Sign up dengan Google',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFC0E862),
-      colorText: Colors.black,
-    );
-    // Implement Google Sign In
+  void signUpWithGoogle() async {
+    isLoading.value = true;
+    final ok = await AuthService().loginWithGoogle();
+    isLoading.value = false;
+    if (ok) {
+      // setelah login with google, cek profile apakah lengkap
+      final profile = await AuthService().supabase.from('profiles').select().eq('id', AuthService().supabase.auth.currentUser!.id).maybeSingle();
+      if (profile == null) {
+        // kalau kamu punya route complete-profile, arahkan ke situ
+        Get.offAllNamed('/complete-profile');
+      } else {
+        Get.offAllNamed('/home');
+      }
+    }
   }
 
   void goToLogin() {
