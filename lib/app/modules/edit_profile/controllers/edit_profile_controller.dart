@@ -13,6 +13,9 @@ class EditProfileController extends GetxController {
   final userPhoto = ''.obs;
   File? photoFile;
 
+  final isLoading = false.obs;
+  final isUploading = false.obs;
+
   final ImagePicker picker = ImagePicker();
 
   @override
@@ -22,51 +25,172 @@ class EditProfileController extends GetxController {
   }
 
   Future<void> loadProfile() async {
-    final data = await profileService.getProfile();
-    if (data != null) {
-      nameC.text = data['full_name'] ?? '';
-      cityC.text = data['city'] ?? '';
-      userPhoto.value = 
-        (data['avatar_url'] != null && data['avatar_url'].toString().isNotEmpty)
-            ? data['avatar_url']
+    try {
+      isLoading.value = true;
+      print("🔄 Loading profile...");
+      
+      final data = await profileService.getProfile();
+      
+      if (data != null) {
+        nameC.text = data['full_name'] ?? '';
+        cityC.text = data['city'] ?? '';
+        
+        final avatarUrl = data['avatar_url'];
+        userPhoto.value = (avatarUrl != null && avatarUrl.toString().isNotEmpty)
+            ? avatarUrl
             : 'assets/profile/avatar.jpg';
 
+        print("✅ Profile loaded:");
+        print("   - Name: ${nameC.text}");
+        print("   - City: ${cityC.text}");
+        print("   - Avatar: ${userPhoto.value}");
+      } else {
+        print("⚠️ No profile data found");
+      }
+    } catch (e) {
+      print("❌ Error loading profile: $e");
+      Get.snackbar(
+        "Error",
+        "Gagal memuat profil: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
   Future<void> pickImage() async {
-    final XFile? img =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    try {
+      print("📷 Opening image picker...");
+      
+      final XFile? img = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 75,
+      );
 
-    if (img != null) {
-      photoFile = File(img.path);
-      userPhoto.value = img.path; // preview lokal
+      if (img != null) {
+        photoFile = File(img.path);
+        userPhoto.value = img.path; // preview lokal
+        
+        print("✅ Image picked: ${img.path}");
+        print("   - Size: ${await photoFile!.length()} bytes");
+      } else {
+        print("⚠️ No image selected");
+      }
+    } catch (e) {
+      print("❌ Error picking image: $e");
+      Get.snackbar(
+        "Error",
+        "Gagal memilih gambar: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
   Future<void> saveProfile() async {
-    String? uploadedUrl;
+    try {
+      // Validasi input
+      if (nameC.text.trim().isEmpty) {
+        Get.snackbar(
+          "Error",
+          "Nama lengkap tidak boleh kosong",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
 
-    if (photoFile != null) {
-      uploadedUrl = await profileService.uploadProfilePhoto(photoFile!);
+      if (cityC.text.trim().isEmpty) {
+        Get.snackbar(
+          "Error",
+          "Kota tidak boleh kosong",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      isLoading.value = true;
+      print("💾 Saving profile...");
+
+      String? uploadedUrl;
+
+      // Upload foto jika ada
+      if (photoFile != null) {
+        print("📤 Uploading photo...");
+        isUploading.value = true;
+        
+        uploadedUrl = await profileService.uploadProfilePhoto(photoFile!);
+        
+        isUploading.value = false;
+        
+        if (uploadedUrl == null) {
+          print("❌ Photo upload failed");
+          Get.snackbar(
+            "Error",
+            "Gagal upload foto. Profil akan disimpan tanpa foto baru.",
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        } else {
+          print("✅ Photo uploaded: $uploadedUrl");
+        }
+      }
+
+      // Tentukan avatar URL yang akan disimpan
+      String? finalAvatarUrl;
+      if (uploadedUrl != null) {
+        finalAvatarUrl = uploadedUrl;
+      } else if (userPhoto.value.startsWith('http')) {
+        finalAvatarUrl = userPhoto.value;
+      }
+
+      print("📝 Updating profile with:");
+      print("   - Name: ${nameC.text}");
+      print("   - City: ${cityC.text}");
+      print("   - Avatar URL: $finalAvatarUrl");
+
+      // Update profil
+      final success = await profileService.updateProfile(
+        fullName: nameC.text.trim(),
+        city: cityC.text.trim(),
+        avatarUrl: finalAvatarUrl,
+      );
+
+      if (success) {
+        print("✅ Profile updated successfully!");
+        
+        Get.snackbar(
+          "Berhasil",
+          "Profil berhasil diperbarui",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        // Kembali ke halaman profil
+        Get.back();
+      } else {
+        print("❌ Profile update failed");
+      }
+    } catch (e) {
+      print("❌ Error saving profile: $e");
+      Get.snackbar(
+        "Error",
+        "Gagal menyimpan profil: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+      isUploading.value = false;
     }
-
-    await profileService.updateProfile(
-      fullName: nameC.text,
-      city: cityC.text,
-      avatarUrl: uploadedUrl ??
-      (userPhoto.value.startsWith('http') ? userPhoto.value : null),
-    );
-
-    Get.snackbar(
-      "Berhasil",
-      "Profil berhasil diperbarui",
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-
-    Get.back();
   }
 
   @override

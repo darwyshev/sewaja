@@ -1,5 +1,3 @@
-// File: lib/app/modules/edit_profile/views/edit_profile_view.dart
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,42 +11,46 @@ class EditProfileView extends GetView<EditProfileController> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-                    _buildAvatarSection(),
-                    const SizedBox(height: 40),
+        child: Obx(() {
+          if (controller.isLoading.value && controller.nameC.text.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          return Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildAvatarSection(),
+                      const SizedBox(height: 40),
 
-                    // NAMA LENGKAP
-                    _buildTextField(
-                      label: 'Nama Lengkap',
-                      controller: controller.nameC,
-                    ),
-                    const SizedBox(height: 24),
+                      // NAMA LENGKAP
+                      _buildTextField(
+                        label: 'Nama Lengkap',
+                        controller: controller.nameC,
+                      ),
+                      const SizedBox(height: 24),
 
-                    // KOTA
-                    _buildTextField(
-                      label: 'Kota',
-                      controller: controller.cityC,
-                    ),
+                      // KOTA
+                      _buildTextField(
+                        label: 'Kota',
+                        controller: controller.cityC,
+                      ),
 
-                    const SizedBox(height: 24),
-
-                    const SizedBox(height: 40),
-                    _buildConfirmButton(),
-                  ],
+                      const SizedBox(height: 40),
+                      _buildConfirmButton(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -87,39 +89,110 @@ class EditProfileView extends GetView<EditProfileController> {
           Obx(() {
             final path = controller.userPhoto.value;
 
-            ImageProvider img;
+            // 🔥 FIX: Gunakan Image.network untuk URL, File untuk local, Asset untuk default
+            Widget avatarWidget;
 
             if (path.startsWith('http')) {
-              img = NetworkImage(path);
-            } else if (File(path).existsSync()) {
-              img = FileImage(File(path));
+              // Network image dari Supabase
+              avatarWidget = ClipOval(
+                child: Image.network(
+                  path,
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    print("❌ Error loading network image: $error");
+                    return Image.asset(
+                      'assets/profile/avatar.jpg',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: 120,
+                      height: 120,
+                      color: Colors.grey[200],
+                      child: const Center(child: CircularProgressIndicator()),
+                    );
+                  },
+                ),
+              );
+            } else if (path.isNotEmpty && File(path).existsSync()) {
+              // Local file dari image picker
+              avatarWidget = ClipOval(
+                child: Image.file(
+                  File(path),
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+              );
             } else {
-              img = const AssetImage('assets/profile/avatar.jpg');
+              // Fallback ke asset default
+              avatarWidget = ClipOval(
+                child: Image.asset(
+                  'assets/profile/avatar.jpg',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+              );
             }
 
-            return CircleAvatar(
-              radius: 60,
-              backgroundImage: img,
+            return Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: controller.isUploading.value 
+                      ? Colors.blue 
+                      : Colors.transparent,
+                  width: 3,
+                ),
+              ),
+              child: Stack(
+                children: [
+                  avatarWidget,
+                  if (controller.isUploading.value)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             );
           }),
           Positioned(
             bottom: 0,
             right: 0,
-            child: GestureDetector(
-              onTap: controller.pickImage,
+            child: Obx(() => GestureDetector(
+              onTap: controller.isUploading.value ? null : controller.pickImage,
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFC0E862),
+                decoration: BoxDecoration(
+                  color: controller.isUploading.value 
+                      ? Colors.grey 
+                      : const Color(0xFFC0E862),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.edit,
+                child: Icon(
+                  controller.isUploading.value ? Icons.hourglass_bottom : Icons.edit,
                   size: 20,
                   color: Colors.black,
                 ),
               ),
-            ),
+            )),
           ),
         ],
       ),
@@ -173,28 +246,40 @@ class EditProfileView extends GetView<EditProfileController> {
   }
 
   Widget _buildConfirmButton() {
-    return SizedBox(
+    return Obx(() => SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: controller.saveProfile,
+        onPressed: controller.isLoading.value || controller.isUploading.value
+            ? null
+            : controller.saveProfile,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0E1111),
+          disabledBackgroundColor: const Color(0xFF0E1111).withOpacity(0.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
           elevation: 0,
         ),
-        child: const Text(
-          'Konfirmasi',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            fontFamily: 'Ubuntu',
-          ),
-        ),
+        child: controller.isLoading.value || controller.isUploading.value
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Text(
+                'Konfirmasi',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  fontFamily: 'Ubuntu',
+                ),
+              ),
       ),
-    );
+    ));
   }
 }

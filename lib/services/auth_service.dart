@@ -31,9 +31,12 @@ class AuthService {
       );
 
       if (res.user != null) {
+        // 🔥 PASTIKAN PROFILE ROW ADA
+        await _ensureProfileExists(res.user!);
         return true;
       } else {
-        Get.snackbar('Error', 'Login gagal', backgroundColor: Colors.red, colorText: Colors.white);
+        Get.snackbar('Error', 'Login gagal', 
+            backgroundColor: Colors.red, colorText: Colors.white);
         return false;
       }
     } on AuthException catch (e) {
@@ -50,48 +53,39 @@ class AuthService {
   }
 
   /// REGISTER EMAIL / PASSWORD
-  /// Returns true if successful (user created)
   Future<bool> register(
     String email,
     String password,
     BuildContext context,
   ) async {
     try {
+      print("📝 Registering user: $email");
+      
       final res = await supabase.auth.signUp(
         email: email.trim(),
         password: password.trim(),
       );
 
       if (res.user != null) {
-        // jangan navigate di service — controller yang mengatur navigasi
-        // ensure profile row exists (some setups insert via trigger; this is a safety net)
-        try {
-          final user = res.user!;
-          final profile = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
-          if (profile == null) {
-            await supabase.from('profiles').insert({
-              'id': user.id,
-              'full_name': '',
-              'avatar_url': null,
-              'city': null,
-              'updated_at': DateTime.now().toIso8601String(),
-            });
-          }
-        } catch (_) {
-          // ignore insert error here; it's non-fatal (but should be logged)
-        }
-
+        print("✅ User registered: ${res.user!.id}");
+        
+        // 🔥 PASTIKAN PROFILE ROW DIBUAT
+        await _ensureProfileExists(res.user!);
+        
         return true;
       } else {
-        Get.snackbar('Error', 'Register gagal', backgroundColor: Colors.red, colorText: Colors.white);
+        Get.snackbar('Error', 'Register gagal', 
+            backgroundColor: Colors.red, colorText: Colors.white);
         return false;
       }
     } on AuthException catch (e) {
+      print("❌ AuthException: ${e.message}");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message), backgroundColor: Colors.red),
       );
       return false;
     } catch (e) {
+      print("❌ Register error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Register gagal: $e'), backgroundColor: Colors.red),
       );
@@ -100,12 +94,18 @@ class AuthService {
   }
 
   /// LOGIN GOOGLE (SUPABASE)
-  /// returns true if login succeeded
   Future<bool> loginWithGoogle() async {
     try {
+      print("🔐 Starting Google Sign-In...");
+      
       final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return false;
+      if (googleUser == null) {
+        print("⚠️ User cancelled Google Sign-In");
+        return false;
+      }
 
+      print("✅ Google user: ${googleUser.email}");
+      
       final googleAuth = await googleUser.authentication;
 
       final res = await supabase.auth.signInWithIdToken(
@@ -115,24 +115,66 @@ class AuthService {
       );
 
       final user = res.user;
-      if (user == null) return false;
-
-      // Ensure profile row exists (if your DB already has trigger, this will just detect)
-      final existing = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
-      if (existing == null) {
-        await supabase.from('profiles').insert({
-          'id': user.id,
-          'full_name': user.userMetadata?['name'] ?? user.email ?? '',
-          'avatar_url': user.userMetadata?['picture'] ?? null,
-          'city': null,
-          'updated_at': DateTime.now().toIso8601String(),
-        });
+      if (user == null) {
+        print("❌ No user returned from Supabase");
+        return false;
       }
+
+      print("✅ Supabase user: ${user.id}");
+
+      // 🔥 PASTIKAN PROFILE ROW ADA
+      await _ensureProfileExists(user);
 
       return true;
     } catch (e) {
-      Get.snackbar("Error", "Google Sign-In gagal: $e");
+      print("❌ Google Sign-In error: $e");
+      Get.snackbar("Error", "Google Sign-In gagal: $e",
+          backgroundColor: Colors.red, colorText: Colors.white);
       return false;
+    }
+  }
+
+  /// 🔥 HELPER: PASTIKAN PROFILE ROW EXISTS
+  Future<void> _ensureProfileExists(User user) async {
+    try {
+      print("🔍 Checking if profile exists for user: ${user.id}");
+      
+      // Cek apakah profile sudah ada
+      final existing = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (existing == null) {
+        print("⚠️ Profile not found, creating new profile...");
+        
+        // Buat profile baru
+        final newProfile = {
+          'id': user.id,
+          'full_name': user.userMetadata?['full_name'] ?? 
+                       user.userMetadata?['name'] ?? 
+                       user.email ?? 
+                       '',
+          'avatar_url': user.userMetadata?['avatar_url'] ?? 
+                        user.userMetadata?['picture'] ?? 
+                        null,
+          'city': null,
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+
+        print("📤 Inserting profile: $newProfile");
+
+        await supabase.from('profiles').insert(newProfile);
+        
+        print("✅ Profile created successfully!");
+      } else {
+        print("✅ Profile already exists");
+      }
+    } catch (e) {
+      print("❌ Error ensuring profile exists: $e");
+      // Don't throw error, just log it
+      // Karena ini non-critical, user masih bisa login
     }
   }
 

@@ -63,12 +63,41 @@ class ProfileView extends GetView<ProfileController> {
             shape: BoxShape.circle,
             border: Border.all(color: const Color(0xFF0E1111), width: 3),
           ),
-          child: Obx(
-            () => CircleAvatar(
-              radius: 50,
-              backgroundImage: AssetImage(controller.userPhoto.value),
-            ),
-          ),
+          child:           Obx(() {
+            final photoUrl = controller.userPhoto.value;
+            
+            // 🔥 FIX: Gunakan Image.network dengan error builder
+            if (photoUrl.startsWith('http')) {
+              return ClipOval(
+                child: Image.network(
+                  photoUrl,
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    print("❌ Error loading network image: $error");
+                    return const CircleAvatar(
+                      radius: 50,
+                      backgroundImage: AssetImage('assets/profile/avatar.jpg'),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.grey[200],
+                      child: const CircularProgressIndicator(),
+                    );
+                  },
+                ),
+              );
+            } else {
+              return const CircleAvatar(
+                radius: 50,
+                backgroundImage: AssetImage('assets/profile/avatar.jpg'),
+              );
+            }
+          }),
         ),
         const SizedBox(height: 16),
         // Name
